@@ -16,12 +16,15 @@
     <div class="cost-card card">
       <h2>Total Cost</h2>
       <div class="item">Total Cost: ${{ totalCost }}</div>
+      <button @click="submitSelectedAddons">Submit Selected Add-ons</button>
     </div>
   </div>
 </template>
 
 <script>
 import { ref } from 'vue'
+// TODO: replace with deployed url
+const baseUrl = 'http://localhost:3000'
 export default {
   name: 'AddOnForm',
   props: {
@@ -40,8 +43,7 @@ export default {
   methods: {
     async fetchAddons() {
       try {
-        const response = await fetch('http://localhost:3000/add_ons');
-        // const response = await fetch('https://trip-add-on-service-3fkknrl4qq-uc.a.run.app/add_ons');
+        const response = await fetch(`${baseUrl}/add_ons`);
         const data = await response.json();
         const formatted = data.map((v) => {
           if (v.start_time) {
@@ -68,10 +70,35 @@ export default {
       const hours = date.getHours().toString().padStart(2, '0');
       const minutes = date.getMinutes().toString().padStart(2, '0');
       return `${hours}.${minutes}`;
-    }
-    // disable add-ons that are conflicting when clicked
+    },
+    async submitSelectedAddons() {
+      try {
+        const response = await fetch(`${baseUrl}/trip_add_ons`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
 
-  }
+          body: JSON.stringify({
+            trip_id: this.tripId,
+            add_on_ids: this.selectedAddons.map((v) => v.id),
+          }),
+        });
+        if (!response.ok) {
+          throw new Error('Network response was not ok ', response.status);
+        }
+
+        const data = await response.json();
+        // refresh the form 
+        console.log(data); // Handle the response as needed
+      } catch (error) {
+        console.error('Error submitting selected addons:', error);
+      }
+    },
+  },
+
+  // disable add-ons that are conflicting when clicked
+
 };
 </script>
 
