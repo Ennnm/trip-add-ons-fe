@@ -25,8 +25,7 @@
 
 <script>
 import { ref } from 'vue'
-// TODO: replace with deployed url
-const baseUrl = 'http://localhost:3000'
+const baseUrl = process.env.VUE_APP_API_URL
 
 export default {
   name: 'AddOnForm',
