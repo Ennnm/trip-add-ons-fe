@@ -1,6 +1,7 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png">
-  <AddOnForm />
+  <v-app>
+    <AddOnForm />
+  </v-app>
 </template>
 
 <script>

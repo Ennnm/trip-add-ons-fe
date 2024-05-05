@@ -18,7 +18,7 @@
     <div class="cost-card card">
       <h2>Total Cost</h2>
       <div class="item">Total Cost: ${{ totalCost }}</div>
-      <button @click="submitSelectedAddons">Submit Selected Add-ons</button>
+      <v-btn color="primary" @click="submitSelectedAddons">Submit Selected</v-btn>
     </div>
   </div>
 </template>
@@ -195,7 +195,7 @@ export default {
 }
 
 .muted {
-  color: lightgray
+  opacity: 0.3;
 }
 
 .addon-info {
