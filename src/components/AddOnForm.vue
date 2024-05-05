@@ -2,7 +2,8 @@
   <div class="container">
     <div class="addon-card card">
       <h2>Add-ons</h2>
-      <div v-for="(addon, index) in addons" :key="index" class="item">
+      <div v-for="(addon, index) in addons" :key="index" :class="{ 'muted': isConflictingToSelection(addon) }"
+        class="item">
         <div class="addon-info">
           <p style="font-weight: bold;">{{ addon.name }}</p>
           <p v-if="addon.start_time && addon.end_time">
@@ -10,7 +11,8 @@
           </p>
           <p>Price: USD {{ addon.cost }}</p>
         </div>
-        <input type="checkbox" v-model="selectedAddons" :value="addon" @change="calculateTotalCost">
+        <input type="checkbox" v-model="selectedAddons" :value="addon" @change="onSelect"
+          :disabled="isConflictingToSelection(addon)">
       </div>
     </div>
     <div class="cost-card card">
@@ -25,6 +27,7 @@
 import { ref } from 'vue'
 // TODO: replace with deployed url
 const baseUrl = 'http://localhost:3000'
+
 export default {
   name: 'AddOnForm',
   props: {
@@ -34,13 +37,42 @@ export default {
     return {
       addons: [],
       selectedAddons: ref([]),
-      totalCost: 0
+      totalCost: 0,
+      conflictSet: new Set()
     };
   },
   mounted() {
     this.fetchAddons();
   },
   methods: {
+    isTimeInRange(time, startTime, endtime) {
+      return time > startTime && time < endtime
+    }, addConflictSetToAddOns(addOns) {
+      addOns = addOns.map((v) => { return { ...v, conflictSet: new Set() } })
+      for (let i = 0; i < addOns.length; i++) {
+        let addOn = addOns[i]
+        if (!addOn.start_time && !addOn.end_time) {
+          continue
+        }
+        for (let j = i + 1; j < addOns.length; j++) {
+          let otherAddOn = addOns[j]
+          if (!otherAddOn.start_time && !otherAddOn.end_time) {
+            continue
+          }
+          if (addOn.start_time == otherAddOn.start_time && addOn.end_time == otherAddOn.end_time) {
+            addOn.conflictSet.add(otherAddOn.id)
+            otherAddOn.conflictSet.add(addOn.id)
+          } else {
+            if (this.isTimeInRange(addOn.start_time, otherAddOn.start_time, otherAddOn.end_time) ||
+              this.isTimeInRange(addOn.end_time, otherAddOn.start_time, otherAddOn.end_time)) {
+              addOn.conflictSet.add(otherAddOn.id)
+              otherAddOn.conflictSet.add(addOn.id)
+            }
+          }
+        }
+      }
+      return addOns
+    },
     async fetchAddons() {
       try {
         const response = await fetch(`${baseUrl}/add_ons`);
@@ -54,8 +86,8 @@ export default {
           }
           return v
         })
-        this.addons = formatted;
-        console.log(formatted)
+        this.addons = this.addConflictSetToAddOns(formatted);
+        console.log(this.addons)
       } catch (error) {
         console.error('Error fetching add-ons:', error);
       }
@@ -65,7 +97,22 @@ export default {
         return total + addOn.cost
       }, 0);
     },
-
+    calculateConflicted() {
+      this.conflictSet = new Set()
+      this.selectedAddons.forEach((a) => {
+        if (a.conflictSet.size > 0) {
+          this.conflictSet.add(...a.conflictSet)
+        }
+      })
+      console.log(this.conflictSet)
+    },
+    isConflictingToSelection(addOn) {
+      return this.conflictSet.has(addOn.id)
+    },
+    onSelect() {
+      this.calculateTotalCost()
+      this.calculateConflicted()
+    },
     formatTime(date) {
       const hours = date.getHours().toString().padStart(2, '0');
       const minutes = date.getMinutes().toString().padStart(2, '0');
@@ -96,9 +143,6 @@ export default {
       }
     },
   },
-
-  // disable add-ons that are conflicting when clicked
-
 };
 </script>
 
@@ -148,6 +192,10 @@ export default {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+}
+
+.muted {
+  color: lightgray
 }
 
 .addon-info {
