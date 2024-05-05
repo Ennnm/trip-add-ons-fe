@@ -18,7 +18,7 @@
     <div class="cost-card card">
       <h2>Total Cost</h2>
       <div class="item">Total Cost: ${{ totalCost }}</div>
-      <v-btn color="primary" @click="submitSelectedAddons">Submit Selected</v-btn>
+      <v-btn color="primary" @click="submitSelectedAddons" :disabled="submitted">{{ getButtonContent() }}</v-btn>
     </div>
   </div>
 </template>
@@ -38,7 +38,8 @@ export default {
       addons: [],
       selectedAddons: ref([]),
       totalCost: 0,
-      conflictSet: new Set()
+      conflictSet: new Set(),
+      submitted: false,
     };
   },
   mounted() {
@@ -109,14 +110,17 @@ export default {
     isConflictingToSelection(addOn) {
       return this.conflictSet.has(addOn.id)
     },
+    getButtonContent() {
+      return this.submitted ? "Submitted!" : "Submit Add-ons";
+    },
     onSelect() {
       this.calculateTotalCost()
       this.calculateConflicted()
     },
     formatTime(date) {
-      const hours = date.getHours().toString().padStart(2, '0');
-      const minutes = date.getMinutes().toString().padStart(2, '0');
-      return `${hours}.${minutes}`;
+      const hours = date.getHours().toString().padStart(2, '0')
+      const minutes = date.getMinutes().toString().padStart(2, '0')
+      return `${hours}.${minutes}`
     },
     async submitSelectedAddons() {
       try {
@@ -135,11 +139,13 @@ export default {
           throw new Error('Network response was not ok ', response.status);
         }
 
-        const data = await response.json();
+        const data = await response.json()
+        this.submitted = true
         // refresh the form 
         console.log(data); // Handle the response as needed
+        // await this.$router.push({ name: 'Success' });
       } catch (error) {
-        console.error('Error submitting selected addons:', error);
+        console.error('Error submitting selected addons:', error)
       }
     },
   },
